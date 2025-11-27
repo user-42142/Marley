@@ -30,6 +30,8 @@
          suporte a strings multilinha
          placeholders com chaves, e no caso do programador querer chaves, ele pode digitar \{}
          e fazer a compilação dentro de placeholders
+         mudar o nome da linguagem para Marley
+         adicionar funções de incrementação, decrementação, etc.
    =#
 using Symbolics
 using ArgParse

@@ -1,0 +1,156 @@
+#= Este será o compilador do código em trilang, versão 0.1.
+    HISTÓRICO DE ATUALIZAÇÕES:
+    2025-11-12: Versão 0.1 criada:
+    Ele lê o arquivo teste.t3, interpreta as linhas e gera o código Julia correspondente, salvando-o em output.jl.
+    Ele suporta definições de variáveis e comandos de impressão simples.
+    2025-11-13: Versão 0.2 criada:
+    Equações matemáticas na definição de variáveis agora são suportadas.
+    Exemplo: 2x = 3 + 4
+    quando x for printado, será avaliado como 3.5.
+    também funciona com outras incógnitas, mas a única modificada é a primeira encontrada na expressão.
+    
+   =#
+using Symbolics
+texto = read("teste.t3", String)
+lines = split(texto, '\n')
+#remover comentários
+for i in eachindex(lines)
+    if occursin("#", lines[i])
+        partes = split(lines[i], "#")
+        lines[i] = partes[1]
+    end
+end
+function extrair_valores(linha::AbstractString, padroes::Vector{String})
+    for padrao in padroes
+        # Escapar caracteres regex perigosos
+        regex = replace(padrao, r"([\\\.\+\*\?\[\]\(\)\^\$\|])" => s"\\\1")
+
+        # Substituir os elementos especiais
+        regex = replace(regex, r" " => " +")  # espaço normal = ao menos um espaço
+        regex = replace(regex, "{spaces}" => " *")
+        regex = replace(regex, r"<opt>(.*?)</opt>" => s"(?:\1)?")
+        regex = replace(regex, "{val}" => "(.+?)")
+
+        # Regex de correspondência completa
+        re = Regex("^" * regex * "\$", "i")
+         m = match(re, linha)
+        if m !== nothing
+            return [String(v) for v in m.captures if v !== nothing]
+        end
+    end
+    return nothing
+end
+using Symbolics
+using ModelingToolkit
+
+using Symbolics
+
+function resolver_equacao(lhs::AbstractString, rhs::AbstractString, varname::AbstractString)
+    texto_total = lhs * " " * rhs
+    nomes_vars = unique([m.match for m in eachmatch(r"[a-zA-Z_]\w*", texto_total)])
+    simbolos = Dict{String,Any}()
+    for nome in nomes_vars
+        simbolos[nome] = Symbolics.variable(Symbol(nome))
+    end
+    function substituir(expr)
+        if expr isa Symbol
+            s = String(expr)
+            if haskey(simbolos, s)
+                return simbolos[s]
+            else
+                return expr
+            end
+        elseif expr isa Number
+            return expr
+        elseif expr isa Expr
+            return Expr(expr.head, substituir.(expr.args)...)
+        else
+            return expr
+        end
+    end
+    lhs_parsed = Meta.parse(lhs)
+    rhs_parsed = Meta.parse(rhs)
+    lhs_sub = substituir(lhs_parsed)
+    rhs_sub = substituir(rhs_parsed)
+    lhs_eval = eval(lhs_sub)
+    rhs_eval = eval(rhs_sub)
+    eq = lhs_eval ~ rhs_eval
+    if !haskey(simbolos, varname)
+        return "variável $(varname) não encontrada nas expressões"
+    end
+    var = simbolos[varname]
+    sol = try
+        Symbolics.solve_for(eq, var)
+    catch
+        nothing
+    end
+    function invalido(s)
+        s === nothing ||
+        s == [] ||
+        (isa(s, Number) && isnan(s)) ||
+        string(s) == string(eq)
+    end
+    if invalido(sol)
+        isolado = simplify(rhs_eval - (lhs_eval - var))
+        return "$(varname) = $(string(isolado))"
+    else
+        sol = sol isa AbstractArray ? sol[1] : sol
+        sol_simp = simplify(sol)
+        return "$(varname) = $(string(sol_simp))"
+    end
+end
+
+
+
+
+defsvars = ["{val}{spaces}={spaces}{val}", "define {val} como {val}", "set {val} to {val}", "{val} agora é <opt>igual a </opt>{val}", "{val} now is <opt>equal to </opt>{val}"]
+imprs = ["printe {val}", "imprime {val}", "imprima {val}", "print {val}", "mostre {val}", "show {val}"]
+comandos = []
+for linha in lines
+    linha = strip(linha)
+    if isempty(linha)
+        continue
+    end
+    valores = extrair_valores(linha, defsvars)
+    if valores !== nothing
+        println("Definição de variável detectada: ", valores)
+        push!(comandos, ("var", valores))
+        continue
+    end
+    valores = extrair_valores(linha, imprs)
+    if valores !== nothing
+        println("Comando de impressão detectado: ", valores)
+        push!(comandos, ("print", valores))
+        continue
+    end
+    println("Linha não reconhecida: ", linha)
+end
+# COMPILAR PARA JULIA
+julia_code = ""
+for comando in comandos
+   global julia_code
+   tipo, valores = comando
+   if tipo == "var"
+        nome_var = valores[1]
+        valor_var = valores[2]
+        #encontrar qual é a variável a ser modificada
+        #identificar o primeiro nome de variável na definição
+        m = match(r"[a-zA-Z_]\w*", nome_var*" "*valor_var)
+        if m === nothing
+            continue
+        end
+        varname = m.match
+        equacao_resolvida = resolver_equacao(nome_var, valor_var, varname)
+        julia_code *= equacao_resolvida * "\n"
+   elseif tipo == "print"
+      valor_print = valores[1]
+      julia_code *= "println($valor_print)\n"
+   end
+end
+
+println("Código Julia gerado:\n", julia_code)
+# SALVAR CÓDIGO JULIA
+open("output.jl", "w") do file
+    write(file, julia_code)
+end
+println("Código Julia salvo em output.jl")

@@ -56,4 +56,4 @@ Mais algumas pequenas atualizações:
 - fazer a compilação dentro de placeholders,
 - mudar o nome da linguagem para Marley,
 - adicionar funções de incrementação, decrementação, etc.
-- corrigir partes em que variáveis são substituídas por seus nomes em __vars__ de forma a atrapalhar strings ou deixar erros de sintaxe por esse motivo.
+- corrigir partes em que variáveis são substituídas por seus nomes em ____vars____ de forma a atrapalhar strings ou deixar erros de sintaxe por esse motivo.

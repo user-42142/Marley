@@ -1,15 +1,3 @@
-#= Este será o compilador do código em trilang, versão 0.1.
-    HISTÓRICO DE ATUALIZAÇÕES:
-    2025-11-12: Versão 0.1 criada:
-    Ele lê o arquivo teste.t3, interpreta as linhas e gera o código Julia correspondente, salvando-o em output.jl.
-    Ele suporta definições de variáveis e comandos de impressão simples.
-    2025-11-13: Versão 0.2 criada:
-    Equações matemáticas na definição de variáveis agora são suportadas.
-    Exemplo: 2x = 3 + 4
-    quando x for printado, será avaliado como 3.5.
-    também funciona com outras incógnitas, mas a única modificada é a primeira encontrada na expressão.
-    
-   =#
 using Symbolics
 texto = read("teste.t3", String)
 lines = split(texto, '\n')

@@ -48,7 +48,7 @@ essa variável vale 2
 imprime essa variável
 ```
 
-### 2025-11-26: Versão 0.7 criada:
+### Versão 0.7 sendo criada:
 Mais algumas pequenas atualizações:
 - comentários multilinha usando parênteses,
 - suporte a strings multilinha,

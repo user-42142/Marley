@@ -1,8 +1,5 @@
 # Marley
 
-A partir de agora, o nome da linguagem será Marley  
-por causa do cachorro do meu amigo.
-
 ## HISTÓRICO DE ATUALIZAÇÕES:
 
 ### 2025-11-12: Versão 0.1 criada:
